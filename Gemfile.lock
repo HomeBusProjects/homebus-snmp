@@ -1,4 +1,10 @@
 GIT
+  remote: git@github.com:HomeBusProjects/ruby-homebus-application.git
+  revision: e881e55ec36d5626ce08416d7e7de7d31cb8f60c
+  specs:
+    homebus_app (0.0.2)
+
+GIT
   remote: https://github.com/HomeBusProjects/ruby-homebus
   revision: 64d64f26adf2e82d4c8cb7219bdd534f2275f817
   specs:
@@ -15,6 +21,7 @@ PLATFORMS
 
 DEPENDENCIES
   homebus!
+  homebus_app!
   mqtt
   snmp
 
