@@ -1,8 +1,9 @@
 GIT
   remote: git@github.com:HomeBusProjects/ruby-homebus-application.git
-  revision: e881e55ec36d5626ce08416d7e7de7d31cb8f60c
+  revision: 08c9650f66c5c4af29077a14540c92a9eb411325
   specs:
-    homebus_app (0.0.2)
+    homebus_app (0.0.9)
+      dotenv
 
 GIT
   remote: https://github.com/HomeBusProjects/ruby-homebus
@@ -13,6 +14,7 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
+    dotenv (2.7.2)
     mqtt (0.5.0)
     snmp (1.3.1)
 
