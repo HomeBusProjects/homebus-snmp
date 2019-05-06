@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'options'
-requite 'app'
+require './options'
+require './app'
 
 snmp_app_options = SNMPHomeBusAppOptions.new
 

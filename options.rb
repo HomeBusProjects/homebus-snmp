@@ -11,7 +11,7 @@ class SNMPHomeBusAppOptions < HomeBusAppOptions
 
     op.separator 'SNMP options:'
     op.on('-a', '--agent SNMP_AGENT', agent_help) { |value| options[:agent] = value }
-    op.on('-c', '--community SNMP_COMMUNITY_STRING', community_help) { |value| options[:community] = vale }
+    op.on('-c', '--community SNMP_COMMUNITY_STRING', community_help) { |value| options[:community] = value }
     op.on('-n', '--ifnumber INTERFACE_NUMBER', ifnumber_help) { |value| options[:ifnumber] = value }
     op.on('-N', '--ifname INTERFACE_NAME', ifname_help) { |value| options[:ifname] = value }
     op.on('-i', '--ifip INTERFACE_IP_ADDRESS', ifip_help) { |value| options[:ifip] = value }

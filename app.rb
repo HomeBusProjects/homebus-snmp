@@ -26,7 +26,7 @@ class SNMPHomeBusApp < HomeBusApp
   end
 
   def setup!
-    @manager = SNMP::Manager.new(host: '10.0.1.1', community: 'public')
+    @manager = SNMP::Manager.new(host: options[:agent], community: options[:community_string])
 
     response = @manager.get(['sysDescr.0', 'sysName.0', 'sysLocation.0', 'sysUpTime.0'])
     response.each_varbind do |vb|
@@ -45,16 +45,23 @@ class SNMPHomeBusApp < HomeBusApp
     response = @manager.get(Range.new(1, interface_count).map { |i| "ifName.#{i}" })
     response.each_varbind do |vb|
       puts "#{vb.name.to_s}  #{vb.value.to_s}  #{vb.value.asn1_type}"
+      if vb.value.to_s == @options[:ifname]
+        puts "gotta match #{vb.value.to_s}"
+        m = vb.name.to_s.match /ifName\.(\d+)/
+        pp m
+        @ifnumber = m[1]
+      end
     end
   end
 
   def work!
     rcv_bytes = 0
     xmt_bytes = 0
-    response = @manager.get(['ifInOctets.3', 'ifOutOctets.3'])
+
+    response = @manager.get(["ifInOctets.#{@ifnumber}", "ifOutOctets.#{@ifnumber}"])
     response.each_varbind do |vb|
-      rcv_bytes = vb.value.to_i if vb.name.to_s == 'IF-MIB::ifOutOctets.3'
-      xmt_bytes = vb.value.to_i if vb.name.to_s == 'IF-MIB::ifInOctets.3'
+      rcv_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifOutOctets.#{@ifnumber}"
+      xmt_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifInOctets.#{@ifnumber}"
     end
 
 #    out = `snmpbulkwalk -v 2c -c public -Osq 10.0.1.1 .1.3.6.1.2.1.3.1.1.2`
@@ -84,16 +91,16 @@ class SNMPHomeBusApp < HomeBusApp
 
     timestamp = Time.now
 
-    @mqtt.publish "/network/active_hosts", { uuid: @uuid,
+    @mqtt.publish "/network/active_hosts", JSON.generate({ id: @uuid,
                                              timestamp: timestamp,
                                              active_hosts: active_hosts
-                                           }
+                                           })
 
-    @mqtt.publish '/network/bandwidth', { uuid: @uuid,
+    @mqtt.publish '/network/bandwidth', JSON.generate({ id: @uuid,
                                           timestamp: timestamp,
                                           rx_bps: rx_bps,
                                           tx_bps: tx_bps
-                                        }
+                                        })
 
     sleep 60
   end
