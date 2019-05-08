@@ -82,6 +82,18 @@ class SNMPHomeBusApp < HomeBusApp
                   active_hosts: active_hosts }
 
       pp results
+
+      timestamp = Time.now
+      @mqtt.publish "/network/active_hosts", JSON.generate({ id: @uuid,
+                                                             timestamp: timestamp,
+                                                             active_hosts: active_hosts
+                                                           })
+
+      @mqtt.publish '/network/bandwidth', JSON.generate({ id: @uuid,
+                                                          timestamp: timestamp,
+                                                          rx_bps: rx_bps,
+                                                          tx_bps: tx_bps
+                                                        })
     else
       @first_pass = false
     end
@@ -89,18 +101,6 @@ class SNMPHomeBusApp < HomeBusApp
     @last_rcv_bytes = rcv_bytes
     @last_xmt_bytes = xmt_bytes
 
-    timestamp = Time.now
-
-    @mqtt.publish "/network/active_hosts", JSON.generate({ id: @uuid,
-                                             timestamp: timestamp,
-                                             active_hosts: active_hosts
-                                           })
-
-    @mqtt.publish '/network/bandwidth', JSON.generate({ id: @uuid,
-                                          timestamp: timestamp,
-                                          rx_bps: rx_bps,
-                                          tx_bps: tx_bps
-                                        })
 
     sleep 60
   end
