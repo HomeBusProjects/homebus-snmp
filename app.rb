@@ -70,8 +70,10 @@ class SNMPHomeBusApp < HomeBusApp
     active_hosts = 1
 
     unless @first_pass
-      puts "receive #{rcv_bytes - @last_rcv_bytes} bytes, #{((rcv_bytes - @last_rcv_bytes)/20.0*8/1024).to_i} kbps"
-      puts "transmit #{xmt_bytes - @last_xmt_bytes} bytes, #{((xmt_bytes - @last_xmt_bytes)/20.0*8/1024).to_i} kbps"
+      if @options[:verbose]
+        puts "receive #{rcv_bytes - @last_rcv_bytes} bytes, #{((rcv_bytes - @last_rcv_bytes)/20.0*8/1024).to_i} kbps"
+        puts "transmit #{xmt_bytes - @last_xmt_bytes} bytes, #{((xmt_bytes - @last_xmt_bytes)/20.0*8/1024).to_i} kbps"
+      end
 
       rx_bps = ((rcv_bytes - @last_rcv_bytes)/60.0*8).to_i
       tx_bps = ((xmt_bytes - @last_xmt_bytes)/20.0*8).to_i
@@ -81,13 +83,19 @@ class SNMPHomeBusApp < HomeBusApp
                   transmit_bandwidth: tx_bps,
                   active_hosts: active_hosts }
 
-      pp results
+      if @options[:verbose]
+        pp results
+      end
 
       timestamp = Time.now
+
+      # stop publishing this until we have real data to share
+      if false
       @mqtt.publish "/network/active_hosts", JSON.generate({ id: @uuid,
                                                              timestamp: timestamp,
                                                              active_hosts: active_hosts
                                                            })
+      end
 
       @mqtt.publish '/network/bandwidth', JSON.generate({ id: @uuid,
                                                           timestamp: timestamp,
