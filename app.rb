@@ -78,16 +78,11 @@ class SNMPHomeBusApp < HomeBusApp
       rx_bps = ((rcv_bytes - @last_rcv_bytes)/60.0*8).to_i
       tx_bps = ((xmt_bytes - @last_xmt_bytes)/20.0*8).to_i
 
-      results = { timestamp: Time.now.to_i,
-                  receive_bandwidth: rx_bps,
-                  transmit_bandwidth: tx_bps,
-                  active_hosts: active_hosts }
-
       if @options[:verbose]
         pp results
       end
 
-      timestamp = Time.now
+      timestamp = Time.now.to_i
 
       # stop publishing this until we have real data to share
       if false
