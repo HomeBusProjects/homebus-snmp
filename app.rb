@@ -54,6 +54,15 @@ class SNMPHomeBusApp < HomeBusApp
     end
   end
 
+  def active_count
+    begin
+      response = @manager.get_bulk(0, 256, [ "1.3.6.1.2.1.3.1.1.2" ])
+      response.varbind_list.length
+    rescue
+      nil
+    end
+  end
+
   def work!
     rcv_bytes = 0
     xmt_bytes = 0
@@ -64,10 +73,7 @@ class SNMPHomeBusApp < HomeBusApp
       xmt_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifInOctets.#{@ifnumber}"
     end
 
-#    out = `snmpbulkwalk -v 2c -c public -Osq 10.0.1.1 .1.3.6.1.2.1.3.1.1.2`
-#    pp out
-#    active_hosts = out.split("\n").length
-    active_hosts = 1
+    active_hosts = active_count
 
     unless @first_pass
       if @options[:verbose]
@@ -84,19 +90,22 @@ class SNMPHomeBusApp < HomeBusApp
 
       timestamp = Time.now.to_i
 
-      # stop publishing this until we have real data to share
-      if false
-      @mqtt.publish "/network/active_hosts", JSON.generate({ id: @uuid,
-                                                             timestamp: timestamp,
-                                                             active_hosts: active_hosts
-                                                           })
+      if active_hosts
+        @mqtt.publish "/network/active_hosts",
+                      JSON.generate({ id: @uuid,
+                                      timestamp: timestamp,
+                                      active_hosts: active_hosts
+                                    }),
+                      true
       end
 
-      @mqtt.publish '/network/bandwidth', JSON.generate({ id: @uuid,
-                                                          timestamp: timestamp,
-                                                          rx_bps: rx_bps,
-                                                          tx_bps: tx_bps
-                                                        })
+      @mqtt.publish '/network/bandwidth',
+                    JSON.generate({ id: @uuid,
+                                    timestamp: timestamp,
+                                    rx_bps: rx_bps,
+                                    tx_bps: tx_bps
+                                  }),
+                    true
     else
       @first_pass = false
     end
