@@ -56,7 +56,7 @@ class SNMPHomeBusApp < HomeBusApp
 
   def active_count
     begin
-      response = @manager.get_bulk(0, 256, [ "1.3.6.1.2.1.3.1.1.2" ])
+      response = @manager.get_bulk(0, 256, [ '1.3.6.1.2.1.4.22.1.2' ])
       response.varbind_list.length
     rescue
       nil
@@ -90,7 +90,7 @@ class SNMPHomeBusApp < HomeBusApp
 
       timestamp = Time.now.to_i
 
-      if false && active_hosts
+      if active_hosts
         @mqtt.publish "/network/active_hosts",
                       JSON.generate({ id: @uuid,
                                       timestamp: timestamp,
@@ -105,6 +105,9 @@ class SNMPHomeBusApp < HomeBusApp
                                     bandwidth: {
                                       rx_bps: rx_bps,
                                       tx_bps: tx_bps
+                                    },
+                                    active: {
+                                      arp_table_length: active_hosts
                                     }
                                   }),
                     true
