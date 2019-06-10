@@ -90,7 +90,7 @@ class SNMPHomeBusApp < HomeBusApp
 
       timestamp = Time.now.to_i
 
-      if active_hosts
+      if false && active_hosts
         @mqtt.publish "/network/active_hosts",
                       JSON.generate({ id: @uuid,
                                       timestamp: timestamp,
@@ -102,8 +102,10 @@ class SNMPHomeBusApp < HomeBusApp
       @mqtt.publish '/network/bandwidth',
                     JSON.generate({ id: @uuid,
                                     timestamp: timestamp,
-                                    rx_bps: rx_bps,
-                                    tx_bps: tx_bps
+                                    bandwidth: {
+                                      rx_bps: rx_bps,
+                                      tx_bps: tx_bps
+                                    }
                                   }),
                     true
     else
