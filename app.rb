@@ -56,8 +56,12 @@ class SNMPHomeBusApp < HomeBusApp
 
   def active_count
     begin
-      response = @manager.get_bulk(0, 256, [ '1.3.6.1.2.1.4.22.1.2' ])
-      response.varbind_list.length
+      response = @manager.walk( [ '1.3.6.1.2.1.4.22.1.2' ] ) do |row|
+        count += 1
+      end
+
+      puts "walk count #{count}"
+      count
     rescue
       nil
     end
@@ -73,7 +77,7 @@ class SNMPHomeBusApp < HomeBusApp
       xmt_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifInOctets.#{@ifnumber}"
     end
 
-    active_hosts = active_count
+    arp_table_length = arp_table_count
 
     unless @first_pass
       if @options[:verbose]
@@ -90,24 +94,24 @@ class SNMPHomeBusApp < HomeBusApp
 
       timestamp = Time.now.to_i
 
-      if active_hosts
-        @mqtt.publish "/network/active_hosts",
+      if arp_table_length
+        @mqtt.publish '/network/active_hosts',
                       JSON.generate({ id: @uuid,
                                       timestamp: timestamp,
-                                      active_hosts: active_hosts
+                                      active_hosts: {
+                                        arp_table_length: active_hosts
+                                      }
                                     }),
                       true
+
       end
 
-      @mqtt.publish '/network/bandwidth',
+      @mqtt.publish '/network/activity',
                     JSON.generate({ id: @uuid,
                                     timestamp: timestamp,
                                     bandwidth: {
-                                      rx_bps: rx_bps,
-                                      tx_bps: tx_bps
-                                    },
-                                    active: {
-                                      arp_table_length: active_hosts
+                                      rx_bps: rx_bps >= 0 ? rx_bps : nil,
+                                      tx_bps: tx_bps >= 0 ? tx_bps : nil
                                     }
                                   }),
                     true
