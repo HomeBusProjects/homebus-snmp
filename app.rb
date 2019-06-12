@@ -21,7 +21,9 @@ class SNMPHomeBusApp < HomeBusApp
   def find_interface_by_ip(ip_address)
     response = @manager.get(["IP-MIB::ipAdEntIfIndex.#{ip_address}"])
     response.each_varbind do |vb|
-      puts "#{vb.name.to_s}  #{vb.value.to_s}  #{vb.value.asn1_type}"
+      if options[:verbose]
+        puts "#{vb.name.to_s}  #{vb.value.to_s}  #{vb.value.asn1_type}"
+      end
     end
   end
 
@@ -54,13 +56,13 @@ class SNMPHomeBusApp < HomeBusApp
     end
   end
 
-  def active_count
+  def arp_table_count
     begin
+      count = 0
       response = @manager.walk( [ '1.3.6.1.2.1.4.22.1.2' ] ) do |row|
         count += 1
       end
 
-      puts "walk count #{count}"
       count
     rescue
       nil
@@ -77,7 +79,26 @@ class SNMPHomeBusApp < HomeBusApp
       xmt_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifInOctets.#{@ifnumber}"
     end
 
+    timestamp = Time.now.to_i
     arp_table_length = arp_table_count
+    if arp_table_length
+      results = { id: @uuid,
+                  timestamp: timestamp,
+                  active_hosts: {
+                    arp_table_length: arp_table_length
+                  }
+                }
+
+      @mqtt.publish '/network/active_hosts',
+                    JSON.generate(results),
+                    true
+
+      if @options[:verbose]
+        pp results
+      end
+    elsif @options[:verbose]
+      puts "no ARP table count"
+    end
 
     unless @first_pass
       if @options[:verbose]
@@ -85,36 +106,24 @@ class SNMPHomeBusApp < HomeBusApp
         puts "transmit #{xmt_bytes - @last_xmt_bytes} bytes, #{((xmt_bytes - @last_xmt_bytes)/20.0*8/1024).to_i} kbps"
       end
 
-      rx_bps = ((rcv_bytes - @last_rcv_bytes)/60.0*8).to_i
-      tx_bps = ((xmt_bytes - @last_xmt_bytes)/20.0*8).to_i
+      rx_bps = ((rcv_bytes - @last_rcv_bytes)/update_interval()*8).to_i
+      tx_bps = ((xmt_bytes - @last_xmt_bytes)/update_interval()*8).to_i
+
+      results = { id: @uuid,
+                  timestamp: timestamp,
+                  bandwidth: {
+                    rx_bps: rx_bps >= 0 ? rx_bps : nil,
+                    tx_bps: tx_bps >= 0 ? tx_bps : nil
+                  }
+                }
+
+      @mqtt.publish '/network/activity',
+                    JSON.generate(results),
+                    true
 
       if @options[:verbose]
         pp results
       end
-
-      timestamp = Time.now.to_i
-
-      if arp_table_length
-        @mqtt.publish '/network/active_hosts',
-                      JSON.generate({ id: @uuid,
-                                      timestamp: timestamp,
-                                      active_hosts: {
-                                        arp_table_length: active_hosts
-                                      }
-                                    }),
-                      true
-
-      end
-
-      @mqtt.publish '/network/activity',
-                    JSON.generate({ id: @uuid,
-                                    timestamp: timestamp,
-                                    bandwidth: {
-                                      rx_bps: rx_bps >= 0 ? rx_bps : nil,
-                                      tx_bps: tx_bps >= 0 ? tx_bps : nil
-                                    }
-                                  }),
-                    true
     else
       @first_pass = false
     end
@@ -122,8 +131,11 @@ class SNMPHomeBusApp < HomeBusApp
     @last_rcv_bytes = rcv_bytes
     @last_xmt_bytes = xmt_bytes
 
+    sleep update_interval
+  end
 
-    sleep 60
+  def update_interval
+    60
   end
 
   def manufacturer
