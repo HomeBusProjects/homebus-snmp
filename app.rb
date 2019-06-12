@@ -117,7 +117,7 @@ class SNMPHomeBusApp < HomeBusApp
                   }
                 }
 
-      @mqtt.publish '/network/activity',
+      @mqtt.publish '/network/bandwidth',
                     JSON.generate(results),
                     true
 
