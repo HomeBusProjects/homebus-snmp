@@ -80,30 +80,11 @@ class SNMPHomeBusApp < HomeBusApp
     end
 
     timestamp = Time.now.to_i
-    arp_table_length = arp_table_count
-    if arp_table_length
-      results = { id: @uuid,
-                  timestamp: timestamp,
-                  active_hosts: {
-                    arp_table_length: arp_table_length
-                  }
-                }
-
-      @mqtt.publish '/network/active_hosts',
-                    JSON.generate(results),
-                    true
-
-      if @options[:verbose]
-        pp results
-      end
-    elsif @options[:verbose]
-      puts "no ARP table count"
-    end
 
     unless @first_pass
       if @options[:verbose]
-        puts "receive #{rcv_bytes - @last_rcv_bytes} bytes, #{((rcv_bytes - @last_rcv_bytes)/20.0*8/1024).to_i} kbps"
-        puts "transmit #{xmt_bytes - @last_xmt_bytes} bytes, #{((xmt_bytes - @last_xmt_bytes)/20.0*8/1024).to_i} kbps"
+        puts "receive #{rcv_bytes - @last_rcv_bytes} bytes, #{((rcv_bytes - @last_rcv_bytes)/update_interval*8/1024).to_i} kbps"
+        puts "transmit #{xmt_bytes - @last_xmt_bytes} bytes, #{((xmt_bytes - @last_xmt_bytes)/update_interval*8/1024).to_i} kbps"
       end
 
       rx_bps = ((rcv_bytes - @last_rcv_bytes)/update_interval()*8).to_i
@@ -117,7 +98,16 @@ class SNMPHomeBusApp < HomeBusApp
                   }
                 }
 
-      @mqtt.publish '/network/bandwidth',
+      arp_table_length = arp_table_count
+      if arp_table_length
+        results[:active_hosts] =  {
+          arp_table_length: arp_table_length
+        }
+      elsif @options[:verbose]
+        puts "no ARP table count"
+      end
+
+      @mqtt.publish '/network/activity',
                     JSON.generate(results),
                     true
 
