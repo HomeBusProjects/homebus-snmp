@@ -5,6 +5,9 @@ require 'mqtt'
 require 'json'
 
 class SNMPHomeBusApp < HomeBusApp
+  DDC_BANDWIDTH = 'org.homebus.experimental.network-bandwidth'
+  DDC_ACTIVE_HOSTS = 'org.homebus.experimental.network-active'
+
   def initialize(options)
     @options = options
 
@@ -90,32 +93,41 @@ class SNMPHomeBusApp < HomeBusApp
       rx_bps = ((rcv_bytes - @last_rcv_bytes)/update_interval()*8).to_i
       tx_bps = ((xmt_bytes - @last_xmt_bytes)/update_interval()*8).to_i
 
-      results = { id: @uuid,
-                  timestamp: timestamp,
-                  bandwidth: {
-                    rx_bps: rx_bps >= 0 ? rx_bps : nil,
-                    tx_bps: tx_bps >= 0 ? tx_bps : nil
+      if rx_bps >= 0 || tx_bps >= 0
+        results = { id: @uuid,
+                    timestamp: timestamp
                   }
-                }
-
-      arp_table_length = arp_table_count
-      if arp_table_length
-        results[:active_hosts] =  {
-          arp_table_length: arp_table_length
+      
+        results[DDC_BANDWIDTH] = {
+          rx_bps: rx_bps >= 0 ? rx_bps : nil,
+          tx_bps: tx_bps >= 0 ? tx_bps : nil
         }
-      elsif @options[:verbose]
-        puts "no ARP table count"
-      end
 
-      @mqtt.publish '/network/activity',
-                    JSON.generate(results),
-                    true
+        publish! DDC, results
+
+        if @options[:verbose]
+          pp results
+        end
+      end
+    else
+      @first_pass = false
+    end
+
+    arp_table_length = arp_table_count
+    if arp_table_length
+      results = { id: @uuid,
+                  timestamp: timestamp
+                }
+      
+      results[DDC_ACTIVE_HOSTS] = {
+        arp_table_length: arp_table_length
+      }
+
+      publish! DDC, results
 
       if @options[:verbose]
         pp results
       end
-    else
-      @first_pass = false
     end
 
     @last_rcv_bytes = rcv_bytes
@@ -145,7 +157,7 @@ class SNMPHomeBusApp < HomeBusApp
   end
 
   def serial_number
-    ''
+    @manager_hostname
   end
 
   def pin
@@ -154,33 +166,13 @@ class SNMPHomeBusApp < HomeBusApp
 
   def devices
     [
-      { friendly_name: 'Receive bandwidth',
+      { friendly_name: 'Network activity',
         friendly_location: '',
         update_frequency: 60,
         index: 0,
         accuracy: 0,
         precision: 0,
-        wo_topics: [ 'network/bandwidth' ],
-        ro_topics: [],
-        rw_topics: []
-      },
-      { friendly_name: 'Transmit bandwidth',
-        friendly_location: '',
-        update_frequency: 60,
-        accuracy: 0,
-        precision: 0,
-        index: 1,
-        wo_topics: [ 'network/bandwidth' ],
-        ro_topics: [],
-        rw_topics: []
-      },
-      { friendly_name: 'Active hosts',
-        friendly_location: '',
-        update_frequency: 60,
-        accuracy: 0,
-        precision: 0,
-        index: 2,
-        wo_topics: [ 'network/active' ],
+        wo_topics: [ DDC_BANDWIDTH, DDC_ACTIVE_HOSTS ],
         ro_topics: [],
         rw_topics: []
       }
