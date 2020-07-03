@@ -95,18 +95,11 @@ class SNMPHomeBusApp < HomeBusApp
 
       if rx_bps >= 0 || tx_bps >= 0
         results = {
-          source: @uuid,
-          timestamp: timestamp,
-          contents: {
-            ddc: DDC_BANDWIDTH,
-            payload: {
-              rx_bps: rx_bps >= 0 ? rx_bps : nil,
-              tx_bps: tx_bps >= 0 ? tx_bps : nil
-            }
-          }
+          rx_bps: rx_bps >= 0 ? rx_bps : nil,
+          tx_bps: tx_bps >= 0 ? tx_bps : nil
         }
 
-        publish! DDC, results
+        publish! DDC_BANDWIDTH, results
 
         if @options[:verbose]
           pp results
@@ -120,17 +113,10 @@ class SNMPHomeBusApp < HomeBusApp
 
     if arp_table_length
       results = {
-        source: @uuid,
-        timestamp: timestamp,
-        contents: {
-          ddc: DDC_ACTIVE_HOSTS,
-          payload: {
-            arp_table_length: arp_table_length
-          }
-        }
+        arp_table_length: arp_table_length
       }
 
-      publish! DDC, results
+      publish! DDC_ACTIVE_HOSTS, results
 
       if @options[:verbose]
         pp results
