@@ -6,7 +6,7 @@ require 'json'
 
 class SNMPHomeBusApp < HomeBusApp
   DDC_BANDWIDTH = 'org.homebus.experimental.network-bandwidth'
-  DDC_ACTIVE_HOSTS = 'org.homebus.experimental.network-active'
+  DDC_ACTIVE_HOSTS = 'org.homebus.experimental.network-active-hosts'
 
   def initialize(options)
     @options = options
