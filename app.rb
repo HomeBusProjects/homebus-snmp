@@ -1,5 +1,4 @@
-require 'homebus/app'
-require 'homebus/device'
+require 'homebus'
 require 'snmp'
 require 'json'
 require 'dotenv/load'
@@ -86,12 +85,12 @@ class NetworkActivityHomebusApp < Homebus::App
     rcv_bytes = 0
     xmt_bytes = 0
 
-    puts "ifnumber #{@ifnumber}"
+#    puts "ifnumber #{@ifnumber}"
 
     response = @manager.get(["ifInOctets.#{@ifnumber}", "ifOutOctets.#{@ifnumber}"])
     response.each_varbind do |vb|
-      puts vb.name.to_s
-      puts vb
+#      puts vb.name.to_s
+#      puts vb
 
       xmt_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifOutOctets.#{@ifnumber}"
       rcv_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifInOctets.#{@ifnumber}"
