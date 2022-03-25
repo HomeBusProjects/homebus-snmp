@@ -1,10 +1,10 @@
-require 'homebus'
-require 'homebus_app'
+require 'homebus/app'
+require 'homebus/device'
 require 'snmp'
-require 'mqtt'
 require 'json'
+require 'dotenv/load'
 
-class SNMPHomeBusApp < HomeBusApp
+class NetworkActivityHomebusApp < Homebus::App
   DDC_BANDWIDTH = 'org.homebus.experimental.network-bandwidth'
   DDC_ACTIVE_HOSTS = 'org.homebus.experimental.network-active-hosts'
 
@@ -16,7 +16,9 @@ class SNMPHomeBusApp < HomeBusApp
     @last_rcv_bytes = 0
     @last_xmt_bytes = 0
 
-    @manager_hostname = @options[:agent]
+    @agent = @options[:agent] || ENV['SNMP_AGENT']
+    @community_string = @options[:community_string] || ENV['SNMP_COMMUNITY_STRING']
+    @ifnumber = @options[:ifnumber]
 
     super
   end
@@ -31,7 +33,7 @@ class SNMPHomeBusApp < HomeBusApp
   end
 
   def setup!
-    @manager = SNMP::Manager.new(host: options[:agent], community: options[:community_string])
+    @manager = SNMP::Manager.new(host: @agent, community: @community_string)
 
     response = @manager.get(['sysDescr.0', 'sysName.0', 'sysLocation.0', 'sysUpTime.0'])
     response.each_varbind do |vb|
@@ -42,21 +44,29 @@ class SNMPHomeBusApp < HomeBusApp
 
     interface_count = 0
 
-    response = @manager.get(['ifNumber.0'])
-    response.each_varbind do |vb|
-      interface_count = vb.value.to_i
-    end
+    unless @ifnumber
+      response = @manager.get(['ifNumber.0'])
+      response.each_varbind do |vb|
+        interface_count = vb.value.to_i
+      end
 
-    response = @manager.get(Range.new(1, interface_count).map { |i| "ifName.#{i}" })
-    response.each_varbind do |vb|
-      puts "#{vb.name.to_s}  #{vb.value.to_s}  #{vb.value.asn1_type}"
-      if vb.value.to_s == @options[:ifname]
-        puts "gotta match #{vb.value.to_s}"
-        m = vb.name.to_s.match /ifName\.(\d+)/
-        pp m
-        @ifnumber = m[1]
+      response = @manager.get(Range.new(1, interface_count).map { |i| "ifName.#{i}" })
+      response.each_varbind do |vb|
+        puts "#{vb.name.to_s}  #{vb.value.to_s}  #{vb.value.asn1_type}"
+        if vb.value.to_s == @options[:ifname]
+          puts "gotta match #{vb.value.to_s}"
+          m = vb.name.to_s.match /ifName\.(\d+)/
+          pp m
+          @ifnumber = m[1]
+        end
       end
     end
+
+
+    @device = Homebus::Device.new name: "Network activity for #{@agent}",
+                                  manufacturer: "Homebus",
+                                  model: @sysDescr,
+                                  serial_number: @agent
   end
 
   def arp_table_count
@@ -72,17 +82,26 @@ class SNMPHomeBusApp < HomeBusApp
     end
   end
 
-  def work!
+  def _bandwidth
     rcv_bytes = 0
     xmt_bytes = 0
 
+    puts "ifnumber #{@ifnumber}"
+
     response = @manager.get(["ifInOctets.#{@ifnumber}", "ifOutOctets.#{@ifnumber}"])
     response.each_varbind do |vb|
-      rcv_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifOutOctets.#{@ifnumber}"
-      xmt_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifInOctets.#{@ifnumber}"
+      puts vb.name.to_s
+      puts vb
+
+      xmt_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifOutOctets.#{@ifnumber}"
+      rcv_bytes = vb.value.to_i if vb.name.to_s == "IF-MIB::ifInOctets.#{@ifnumber}"
     end
 
-    timestamp = Time.now.to_i
+    return rcv_bytes, xmt_bytes
+  end
+
+  def work!
+    rcv_bytes, xmt_bytes = _bandwidth
 
     unless @first_pass
       if @options[:verbose]
@@ -99,7 +118,7 @@ class SNMPHomeBusApp < HomeBusApp
           tx_bps: tx_bps >= 0 ? tx_bps : nil
         }
 
-        publish! DDC_BANDWIDTH, results
+#        @device.publish! DDC_BANDWIDTH, results
 
         if @options[:verbose]
           pp results
@@ -116,7 +135,7 @@ class SNMPHomeBusApp < HomeBusApp
         arp_table_length: arp_table_length
       }
 
-      publish! DDC_ACTIVE_HOSTS, results
+#      @device.publish! DDC_ACTIVE_HOSTS, results
 
       if @options[:verbose]
         pp results
@@ -133,42 +152,15 @@ class SNMPHomeBusApp < HomeBusApp
     60
   end
 
-  def manufacturer
-    'HomeBus'
-  end
-
-  def model
-    @sysDescr
-  end
-
-  def friendly_name
-    "Network activity for #{@manager_hostname}"
-  end
-
-  def friendly_location
-    @sysLocation
-  end
-
-  def serial_number
-    @manager_hostname
-  end
-
-  def pin
-    ''
+  def name
+    'Homebus Network Activity Publisher'
   end
 
   def devices
-    [
-      { friendly_name: 'Network activity',
-        friendly_location: '',
-        update_frequency: 60,
-        index: 0,
-        accuracy: 0,
-        precision: 0,
-        wo_topics: [ DDC_BANDWIDTH, DDC_ACTIVE_HOSTS ],
-        ro_topics: [],
-        rw_topics: []
-      }
-    ]
+    [ @device ]
+  end
+
+  def publishes
+    [ DDC_BANDWIDTH, DDC_ACTIVE_HOSTS ]
   end
 end

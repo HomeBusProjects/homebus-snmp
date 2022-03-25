@@ -3,7 +3,11 @@
 require './options'
 require './app'
 
-snmp_app_options = SNMPHomeBusAppOptions.new
+network_activity_app_options = NetworkActivityHomebusAppOptions.new
 
-snmp = SNMPHomeBusApp.new snmp_app_options.options
-snmp.run!
+network_activity = NetworkActivityHomebusApp.new network_activity_app_options.options
+#network_activity.run!
+network_activity.setup!
+while true do
+  network_activity.work!
+end

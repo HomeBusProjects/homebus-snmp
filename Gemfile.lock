@@ -1,16 +1,9 @@
 GIT
-  remote: git@github.com:HomeBusProjects/ruby-homebus-application.git
-  revision: 44834e453a8d2c1c9009364dd5e72994f1a386b3
-  specs:
-    homebus_app (0.9.6)
-      dotenv
-      mqtt
-
-GIT
   remote: https://github.com/HomeBusProjects/ruby-homebus
-  revision: 64d64f26adf2e82d4c8cb7219bdd534f2275f817
+  revision: fdb2c62826e3c53f47749a9f31c51f438fcf943d
   specs:
-    homebus (0.3.1)
+    homebus (0.10.14)
+      mqtt (~> 0.5.0)
 
 GEM
   remote: https://rubygems.org/
@@ -20,13 +13,12 @@ GEM
     snmp (1.3.2)
 
 PLATFORMS
-  ruby
+  arm64-darwin-20
 
 DEPENDENCIES
+  dotenv
   homebus!
-  homebus_app!
-  mqtt
   snmp
 
 BUNDLED WITH
-   2.1.2
+   2.3.6

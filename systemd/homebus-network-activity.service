@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 
 User=homebus
-WorkingDirectory=/home/homebus/homebus-snmp
+WorkingDirectory=/home/homebus/homebus-network-activity
 
 ExecStart=/home/homebus/.rbenv/bin/rbenv exec bundle exec homebus-network-activity.rb -a 10.0.1.1 -c public -N eth1
 TimeoutSec=30

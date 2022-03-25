@@ -1,6 +1,6 @@
-require 'homebus_app_options'
+require 'homebus/options'
 
-class SNMPHomeBusAppOptions < HomeBusAppOptions
+class NetworkActivityHomebusAppOptions < Homebus::Options
   def app_options(op)
     agent_help     = 'the SNMP agent IP address or name'
     community_help = 'the SNMP community string'
@@ -19,14 +19,14 @@ class SNMPHomeBusAppOptions < HomeBusAppOptions
   end
 
   def banner
-    'HomeBus SNMP network activity collector'
+    'Homebus network activity publisher'
   end
 
   def version
-    '0.0.1'
+    '0.1.0'
   end
 
   def name
-    'homebus-snmp'
+    'homebus-network-activity'
   end
 end
