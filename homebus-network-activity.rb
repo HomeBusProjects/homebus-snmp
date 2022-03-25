@@ -6,8 +6,4 @@ require './app'
 network_activity_app_options = NetworkActivityHomebusAppOptions.new
 
 network_activity = NetworkActivityHomebusApp.new network_activity_app_options.options
-#network_activity.run!
-network_activity.setup!
-while true do
-  network_activity.work!
-end
+network_activity.run!
