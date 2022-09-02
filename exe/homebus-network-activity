@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'homebus-network-activity/options'
+require 'homebus-network-activity/app'
+
+options = HomebusNetworkActivity::Options.new
+app = HomebusNetworkActivity::App.new(options.options)
+app.run!
+

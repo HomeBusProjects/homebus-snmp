@@ -3,7 +3,7 @@ require 'snmp'
 require 'json'
 require 'dotenv/load'
 
-class NetworkActivityHomebusApp < Homebus::App
+class HomebusNetworkActivity::App < Homebus::App
   DDC_BANDWIDTH = 'org.homebus.experimental.network-bandwidth'
   DDC_ACTIVE_HOSTS = 'org.homebus.experimental.network-active-hosts'
 

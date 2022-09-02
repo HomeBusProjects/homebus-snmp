@@ -1,5 +1,8 @@
 source 'https://rubygems.org'
 
-gem 'snmp'
+gemspec
+
 gem 'dotenv'
-gem 'homebus', git: 'https://github.com/HomeBusProjects/ruby-homebus'
+gem 'homebus', git: 'https://github.com/HomeBusProjects/ruby-homebus', branch: 'main'
+
+gem 'snmp'

@@ -1,6 +1,8 @@
 require 'homebus/options'
 
-class NetworkActivityHomebusAppOptions < Homebus::Options
+require 'homebus-network-activity/version'
+
+class HomebusNetworkActivity::Options < Homebus::Options
   def app_options(op)
     agent_help     = 'the SNMP agent IP address or name'
     community_help = 'the SNMP community string'
@@ -23,7 +25,7 @@ class NetworkActivityHomebusAppOptions < Homebus::Options
   end
 
   def version
-    '0.1.0'
+    HomebusNetworkActivity::VERSION
   end
 
   def name
