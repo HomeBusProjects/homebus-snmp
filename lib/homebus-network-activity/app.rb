@@ -117,7 +117,7 @@ class HomebusNetworkActivity::App < Homebus::App
           tx_bps: tx_bps >= 0 ? tx_bps : nil
         }
 
-#        @device.publish! DDC_BANDWIDTH, results
+        @device.publish! DDC_BANDWIDTH, results
 
         if @options[:verbose]
           pp results
@@ -134,7 +134,7 @@ class HomebusNetworkActivity::App < Homebus::App
         arp_table_length: arp_table_length
       }
 
-#      @device.publish! DDC_ACTIVE_HOSTS, results
+      @device.publish! DDC_ACTIVE_HOSTS, results
 
       if @options[:verbose]
         pp results
